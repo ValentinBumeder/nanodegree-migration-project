@@ -5,6 +5,7 @@ from flask import render_template, session, request, redirect, url_for, flash, m
 from azure.servicebus import Message
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from sqlalchemy import select
 import logging
 
 @app.route('/')
@@ -65,30 +66,27 @@ def notification():
 
         try:
             db.session.add(notification)
+            db.session.flush()
+            notification_id = notification.id
             db.session.commit()
 
             ##################################################
-            ## TODO: Refactor This logic into an Azure Function
+            ## Refactor This logic into an Azure Function
             ## Code below will be replaced by a message queue
             #################################################
-            attendees = Attendee.query.all()
+            
+            message = Message(str(notification_id))
 
-            for attendee in attendees:
-                subject = '{}: {}'.format(attendee.first_name, notification.subject)
-                send_email(attendee.email, subject, notification.message)
-
-            notification.completed_date = datetime.utcnow()
-            notification.status = 'Notified {} attendees'.format(len(attendees))
-            db.session.commit()
-            # TODO Call servicebus queue_client to enqueue notification ID
-
+            queue_client.send(message)
+            
             #################################################
             ## END of TODO
             #################################################
 
             return redirect('/Notifications')
-        except :
+        except Exception as error:
             logging.error('log unable to save notification')
+            logging.error(error)
 
     else:
         return render_template('notification.html')
