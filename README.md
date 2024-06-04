@@ -63,9 +63,14 @@ Complete a month cost analysis of each Azure resource to give an estimate total 
 
 | Azure Resource | Service Tier | Monthly Cost |
 | ------------ | ------------ | ------------ |
-| *Azure Postgres Database* |     |              |
-| *Azure Service Bus*   |         |              |
-| ...                   |         |              |
+| *Azure Postgres Database* | Burstable | 18.53€ |
+| *Azure Service Bus*   | Basic | 0.05€ |
+| *Azure App Service* | Basic B1 | 11.62€ |
+| *Azure Function App* | Consumption | 0.12€ |
+
+Total costs are estimated to be approx. 30,20€ per month. It has to be considered, that these are the costs for a very basic setup, that will work for a lower number of users. If the app is used very frequently, the ressources might be scaled up and produce higher costs.
 
 ## Architecture Explanation
-This is a placeholder section where you can provide an explanation and reasoning for your architecture selection for both the Azure Web App and Azure Function.
+The Application is split on two services. The main application is running on a Azure Web Service. 
+The alternative for the Web Service would have been to use Virtual Machines, but for a simple application, that does not have computing intensive processes running, using a Azure Web Service is more cost-effective. Furthermore it is easier to maintain, so the maintenance costs are lower than for using virutal machines. 
+The background job of sending out email notifications to all users was split out of the application, since this is a longer running process, that would use lot's of computing power of the Azure Web Service and could lead to errors, if it was too slow. The job is running on a Azure Function App, which is triggered by a Azure Service Bus Queue. The Service Bus Queue is a good way, to counter an overload of the system, since it can buffer a high number of requests to the /notification POST endpoint. Furthermore, the Azure Function is very cost effective, since the costs are based on the consumption of the function. So, in times where no notifications have to be sent out, the function will not produce costs. Furthermore, the Azure Function can be scaled very well.  
