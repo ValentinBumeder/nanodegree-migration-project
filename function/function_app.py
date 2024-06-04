@@ -2,7 +2,6 @@ import logging
 import azure.functions as func
 import psycopg2
 import os
-from datetime import datetime
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
@@ -29,7 +28,7 @@ def main(msg: func.ServiceBusMessage):
         cur.execute("SELECT first_name, email FROM attendee;")
         attendees = cur.fetchall()
 
-        # TODO: Loop through each attendee and send an email with a personalized subject
+        # Loop through each attendee and send an email with a personalized subject
         for attendee in attendees: 
             logging.info("Send message with subject: " + subject +". Message: " + message + " to " + attendee[0] + " with email " + attendee[1])
             email = Mail(
@@ -48,8 +47,7 @@ def main(msg: func.ServiceBusMessage):
 
         # Update the notification table by setting the completed date and updating the status with the total number of attendees notified
         updated_status = "Notified " + str(len(attendees)) + " attendees"
-        updated_time = str(datetime.now)
-        cur.execute("UPDATE notification SET status=(%s), completed_date=CURRENT_TIMESTAMP WHERE id=(%s)", (updated_status, notification_id))
+        cur.execute("UPDATE notification SET status=(%s), completed_date=NOW() WHERE id=(%s)", (updated_status, notification_id))
         conn.commit()
 
     except (Exception, psycopg2.DatabaseError) as error:
